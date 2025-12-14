@@ -1,0 +1,31 @@
+[MASTER]
+jobs=0
+persistent=yes
+
+[MESSAGES CONTROL]
+disable=
+    C0103,  # invalid-name (X_test, y_test, X_train - стандартные имена в ML)
+    C0114,  # missing-module-docstring (добавлены)
+    E0401,  # import-error (ложное срабатывание для src импортов)
+    W0407,  # prefer importing 'pd' instead of 'pandas'
+    C0411,  # wrong-import-order
+    W1203,  # logging-fstring-interpolation (исправлено)
+
+[FORMAT]
+max-line-length=88
+single-line-if-stmt=no
+
+[TYPECHECK]
+ignored-modules=sklearn
+generated-members=numpy.*,pandas.*,sklearn.*
+
+[DESIGN]
+max-args=10
+max-locals=25
+max-returns=6
+max-branches=20
+max-statements=100
+
+[VARIABLES]
+# Разрешаем стандартные имена в ML
+good-names=i,j,k,ex,Run,_,f,e,df,X,y,X_train,X_test,y_train,y_test,x_train,x_test

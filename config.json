@@ -1,0 +1,20 @@
+{
+  "data": {
+    "raw_path": "data/raw/uber.csv",
+    "processed_dir": "data/processed"
+  },
+  "features": {
+    "selected": ["passenger_count", "trip_distance"],
+    "engineered": ["hour", "day_of_week"]
+  },
+  "target": "fare_amount",
+  "model": {
+    "output_path": "models/model.pkl",
+    "random_state": 42,
+    "test_size": 0.2
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  }
+}
