@@ -1,4 +1,4 @@
-"""Модуль для предобработки данных."""
+"""Модуль для предобработки данных о поездках такси."""
 
 import logging
 import numpy as np
@@ -9,61 +9,91 @@ logger = logging.getLogger(__name__)
 
 
 def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Выполняет предобработку данных о поездках такси.
-    
-    Аргументы:
+    """Выполняет предобработку данных о поездках такси.
+
+    Этапы обработки:
+    1. Фильтрация по стоимости поездки (fare_amount > 0)
+    2. Фильтрация по количеству пассажиров (1 <= passenger_count <= 6)
+    3. Удаление строк с пропущенными значениями
+    4. Обработка бесконечных значений
+    5. Создание признака расстояния из координат
+
+    Args:
         df (pd.DataFrame): Исходный DataFrame с данными о поездках.
-    
-    Возвращает:
-        pd.DataFrame: Очищенный DataFrame с признаками.
-        
-    Исключения:
+            Ожидаемые колонки: 'fare_amount', 'passenger_count',
+            'pickup_longitude', 'pickup_latitude',
+            'dropoff_longitude', 'dropoff_latitude'
+
+    Returns:
+        pd.DataFrame: Очищенный DataFrame с дополнительным признаком 'distance'.
+
+    Raises:
         ValueError: Если отсутствуют необходимые столбцы.
+        TypeError: Если входные данные не являются pandas DataFrame.
+
+    Examples:
+        >>> df_raw = pd.DataFrame({
+        ...     'fare_amount': [10.0, -5.0, 20.0],
+        ...     'passenger_count': [1, 7, 3],
+        ...     'pickup_longitude': [-73.9, -73.9, -73.9],
+        ...     'pickup_latitude': [40.7, 40.7, 40.7],
+        ...     'dropoff_longitude': [-74.0, -74.0, -74.0],
+        ...     'dropoff_latitude': [40.8, 40.8, 40.8]
+        ... })
+        >>> df_clean = preprocess_data(df_raw)
+        >>> print(f"Очищено строк: {len(df_clean)}")
     """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Входные данные должны быть pandas DataFrame")
+    
     # Создаем копию, чтобы не изменять оригинал
     df_clean = df.copy()
     
-    # 1. Фильтрация по стоимости и количеству пассажиров
+    initial_rows = len(df_clean)
+    logger.info(f"Начальная обработка: {initial_rows} строк")
+    
+    # 1. Фильтрация по стоимости поездки
     if 'fare_amount' in df_clean.columns:
-        initial_rows = len(df_clean)
         df_clean = df_clean[df_clean['fare_amount'] > 0]
         filtered_fare = initial_rows - len(df_clean)
         if filtered_fare > 0:
             logger.info(f"Отфильтровано {filtered_fare} строк с fare_amount <= 0")
     
+    # 2. Фильтрация по количеству пассажиров
     if 'passenger_count' in df_clean.columns:
-        initial_rows = len(df_clean)
         df_clean = df_clean[
             (df_clean['passenger_count'] > 0) & 
             (df_clean['passenger_count'] <= 6)
         ].copy()
         filtered_passengers = initial_rows - len(df_clean)
         if filtered_passengers > 0:
-            logger.info(f"Отфильтровано {filtered_passengers} строк с passenger_count вне диапазона 1-6")
+            logger.info(
+                f"Отфильтровано {filtered_passengers} строк "
+                f"с passenger_count вне диапазона 1-6"
+            )
     
-    # 2. Удаление строк с пропущенными значениями
-    initial_rows = len(df_clean)
+    # 3. Удаление строк с пропущенными значениями
     df_clean = df_clean.dropna()
     removed_rows = initial_rows - len(df_clean)
     
     if removed_rows > 0:
         logger.info(f"Удалено {removed_rows} строк с пропущенными значениями")
     
-    # 3. Обработка бесконечных значений
+    # 4. Обработка бесконечных значений
     numeric_cols = df_clean.select_dtypes(include=[np.number]).columns
     for col in numeric_cols:
         if np.isinf(df_clean[col]).any():
             logger.warning(f"В колонке {col} найдены бесконечные значения")
-            # Заменяем бесконечности на NaN
             df_clean[col] = df_clean[col].replace([np.inf, -np.inf], np.nan)
     
-    # 4. Удаление строк, которые стали NaN после замены бесконечностей
+    # 5. Удаление строк, которые стали NaN после замены бесконечностей
     df_clean = df_clean.dropna()
     
-    # 5. Создание признака distance (если есть координаты)
-    required_cols = ['pickup_longitude', 'pickup_latitude', 
-                    'dropoff_longitude', 'dropoff_latitude']
+    # 6. Создание признака расстояния
+    required_cols = [
+        'pickup_longitude', 'pickup_latitude',
+        'dropoff_longitude', 'dropoff_latitude'
+    ]
     
     if all(col in df_clean.columns for col in required_cols):
         # Вычисляем евклидово расстояние
@@ -71,21 +101,33 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
             (df_clean['dropoff_longitude'] - df_clean['pickup_longitude'])**2 +
             (df_clean['dropoff_latitude'] - df_clean['pickup_latitude'])**2
         )
-        logger.info("Признак distance создан из координат")
+        logger.info("Признак 'distance' создан из координат")
     
-    logger.info(f"После очистки осталось {len(df_clean)} строк")
+    final_rows = len(df_clean)
+    logger.info(f"После очистки осталось {final_rows} строк")
+    logger.info(f"Удалено {initial_rows - final_rows} строк всего")
+    
     return df_clean
 
 
 def create_trip_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Создает дополнительные признаки для поездок.
-    
-    Аргументы:
+    """Создает дополнительные признаки для поездок.
+
+    Добавляет признаки:
+    - delta_longitude: Разница в долготе между точкой посадки и высадки
+    - delta_latitude: Разница в широте между точкой посадки и высадки
+
+    Args:
         df (pd.DataFrame): DataFrame с координатами поездок.
-    
-    Возвращает:
-        pd.DataFrame: DataFrame с добавленными признаками.
+            Должен содержать колонки: 'pickup_longitude', 'pickup_latitude',
+            'dropoff_longitude', 'dropoff_latitude'
+
+    Returns:
+        pd.DataFrame: DataFrame с добавленными признаками направления.
+
+    Examples:
+        >>> df_with_features = create_trip_features(df)
+        >>> print(f"Новые колонки: {df_with_features.columns.tolist()}")
     """
     df_features = df.copy()
     
@@ -100,5 +142,6 @@ def create_trip_features(df: pd.DataFrame) -> pd.DataFrame:
         df_features['delta_latitude'] = (
             df_features['dropoff_latitude'] - df_features['pickup_latitude']
         )
+        logger.info("Добавлены признаки направления: delta_longitude, delta_latitude")
     
     return df_features

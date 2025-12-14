@@ -1,0 +1,68 @@
+site_name: Предсказание стоимости поездок в такси
+site_description: ML пайплайн для предсказания стоимости поездок в такси
+site_author: Команда MLOps
+repo_url: https://github.com/BobinRobin/lesson-08-code-review
+repo_name: lesson-08-code-review
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+
+nav:
+  - Главная: index.md
+  - Начало работы:
+    - Установка: getting-started.md
+    - Быстрый старт: getting-started.md#быстрый-старт
+  - Архитектура:
+    - Обзор: architecture.md
+    - Структура проекта: architecture.md#структура-проекта
+    - Пайплайн: architecture.md#ml-пайплайн
+  - API:
+    - Модули: api-reference.md
+    - Конфигурация: api-reference.md#конфигурация
+  - Тестирование:
+    - Обзор: testing.md
+    - Запуск тестов: testing.md#запуск-тестов
+  - Примеры:
+    - Обучение модели: examples.md
+    - Предсказания: examples.md#предсказания
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            heading_level: 3
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+  - tables
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.details
