@@ -1,6 +1,12 @@
 
 ## **Проект машинного обучения для предсказания стоимости поездок в сервисе такси на основе исторических данных.**
 
+![Python](https://img.shields.io/badge/python-3.7%2B-blue)
+![Scikit-learn](https://img.shields.io/badge/scikit--learn-1.0.2%2B-orange)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Tests](https://img.shields.io/badge/tests-37%20passed-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-88%25-yellowgreen)
+
 # Содержание
 
 Описание проекта
